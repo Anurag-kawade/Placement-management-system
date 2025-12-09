@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <a href="placement-dashboard.html" class="nav-link">Placement Analytics</a>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h1 i {
+            color: #3498db;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: white;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+        
+        .stat-change {
+            font-size: 14px;
+            color: #27ae60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        .chart-container {
+            height: 250px;
+            margin-top: 10px;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .companies-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .company-tag {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-item .label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Placement Analytics Dashboard</h1>
+            <div class="controls">
+                <select id="yearSelect">
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                </select>
+                <button id="generateReport">Generate Report</button>
+                <button id="downloadPDF">Download PDF</button>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>📈 Placement Statistics</h2>
+                <div class="chart-container">
+                    <canvas id="placementStatsChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card stat-card">
+                <h2>💰 Average Package</h2>
+                <div class="stat-value">20.5 LPA</div>
+                <div class="stat-change">↑ +12% from last year</div>
+            </div>
+            
+            <div class="card stat-card">
+                <h2>🚀 Highest Package</h2>
+                <div class="stat-value">42.8 LPA</div>
+                <div class="stat-change">↑ +20% from last year</div>
+            </div>
+            
+            <div class="card stat-card">
+                <h2>🏢 Companies Visited</h2>
+                <div class="stat-value">87</div>
+                <div class="stat-change">↑ +8 from last year</div>
+            </div>
+            
+            <div class="card">
+                <h2>🎯 Package Distribution</h2>
+                <div class="chart-container">
+                    <canvas id="packageDistributionChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card full-width">
+                <h2>🏆 Top Recruiters</h2>
+                <div class="companies-list">
+                    <span class="company-tag">Microsoft</span>
+                    <span class="company-tag">Google</span>
+                    <span class="company-tag">Amazon</span>
+                    <span class="company-tag">Adobe</span>
+                    <span class="company-tag">Intel</span>
+                    <span class="company-tag">Nvidia</span>
+                    <span class="company-tag">Goldman Sachs</span>
+                    <span class="company-tag">McKinsey & Company</span>
+                    <span class="company-tag">Bain & Company</span>
+                    <span class="company-tag">Texas Instruments</span>
+                    <span class="company-tag">Qualcomm</span>
+                    <span class="company-tag">Samsung</span>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="value">245</div>
+                        <div class="label">Total Offers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">92%</div>
+                        <div class="label">Placement Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">156</div>
+                        <div class="label">Internships</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">89</div>
+                        <div class="label">PPO Converted</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📅 Monthly Placement Trends</h2>
+                <div class="chart-container">
+                    <canvas id="monthlyTrendsChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>👔 Internship vs Full-time</h2>
+                <div class="chart-container">
+                    <canvas id="internshipChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Placement Statistics Chart
+            const placementStatsCtx = document.getElementById('placementStatsChart').getContext('2d');
+            const placementStatsChart = new Chart(placementStatsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Computer Science', 'IT', 'Electronics', 'Mechanical', 'Civil'],
+                    datasets: [{
+                        label: 'Offers',
+                        data: [0.95, 0.88, 0.82, 0.75, 0.68],
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Applications',
+                        data: [1.0, 0.95, 0.90, 0.85, 0.80],
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value * 100) + '%';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Placement Rate'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Departments'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw * 100).toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Package Distribution Chart
+            const packageDistributionCtx = document.getElementById('packageDistributionChart').getContext('2d');
+            const packageDistributionChart = new Chart(packageDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['<5 LPA', '5-10 LPA', '10-15 LPA', '15-20 LPA', '20+ LPA'],
+                    datasets: [{
+                        data: [5, 15, 25, 35, 20],
+                        backgroundColor: [
+                            'rgba(231, 76, 60, 0.7)',
+                            'rgba(230, 126, 34, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(231, 76, 60, 1)',
+                            'rgba(230, 126, 34, 1)',
+                            'rgba(241, 196, 15, 1)',
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Monthly Trends Chart
+            const monthlyTrendsCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+            const monthlyTrendsChart = new Chart(monthlyTrendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Placements',
+                        data: [15, 25, 40, 60, 80, 120, 150, 180, 210, 240, 260, 280],
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Placements'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Internship vs Full-time Chart
+            const internshipCtx = document.getElementById('internshipChart').getContext('2d');
+            const internshipChart = new Chart(internshipCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Internship Offers', 'Full-time Offers', 'PPO (Pre-placement Offers)'],
+                    datasets: [{
+                        data: [30, 55, 15],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(155, 89, 182, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(155, 89, 182, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Add interactivity to buttons
+            document.getElementById('generateReport').addEventListener('click', function() {
+                alert('Report generated for ' + document.getElementById('yearSelect').value);
+            });
+            
+            document.getElementById('downloadPDF').addEventListener('click', function() {
+                alert('PDF download initiated for ' + document.getElementById('yearSelect').value);
+            });
+        });
+    </script>
+</body>
+</html>
