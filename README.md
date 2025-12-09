@@ -49,5 +49,4 @@ This system enables smooth workflows for **students** and **placement officers**
 
 ---
 
-## 🏗️ System Architecture
 
